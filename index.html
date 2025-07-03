@@ -39,7 +39,7 @@
       const scene = new BABYLON.Scene(engine);
 
       // Soft white background color
-      scene.clearColor = new BABYLON.Color4(0.18, 0.18, 0.22, 1);
+      scene.clearColor = new BABYLON.Color4(0.95, 0.95, 0.95, 1);
 
       // Camera setup
       const camera = new BABYLON.ArcRotateCamera(
@@ -52,19 +52,22 @@
       );
       camera.attachControl(canvas, true);
 
-      // Balanced zoom speed for scroll wheel
+      // Balanced desktop zoom speed
       camera.wheelPrecision = 50;
 
-      // Load HDR environment texture (lighting only)
+      // 👇 Mobile gesture tuning
+      camera.pinchPrecision = 100;          // slower pinch zoom
+      camera.angularSensibilityX = 4000;    // smoother horizontal drag
+      camera.angularSensibilityY = 4000;    // smoother vertical drag
+      camera.inertia = 0.7;                 // gentle easing after swipe
+
+      // HDR environment lighting
       scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
         "environment/studio.env",
         scene
       );
 
-      // Skybox disabled: no visual HDRI background
-      // (do not include createDefaultSkybox)
-
-      // Load the GLB model
+      // Model import
       try {
         const result = await BABYLON.SceneLoader.ImportMeshAsync("", "models/", "myModel.glb", scene);
         console.log("✅ Model loaded successfully");
@@ -76,7 +79,7 @@
         console.error("❌ Failed to load model:", error);
       }
 
-      // Debug layer toggle: Shift + D
+      // Debug toggle: Shift + D
       window.addEventListener("keydown", (e) => {
         if (e.shiftKey && e.key.toLowerCase() === "d") {
           scene.debugLayer.show();
