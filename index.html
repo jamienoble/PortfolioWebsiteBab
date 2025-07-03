@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Babylon HDR Viewer</title>
+
+  <!-- Babylon core engine -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+
+  <!-- GLTF loader plugin -->
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+
+  <!-- Debug tools -->
+  <script src="https://cdn.babylonjs.com/debugLayer.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+
+    const createScene = async () => {
+      const scene = new BABYLON.Scene(engine);
+
+      // Soft white background color
+      scene.clearColor = new BABYLON.Color4(0.95, 0.95, 0.95, 1);
+
+      // Camera setup
+      const camera = new BABYLON.ArcRotateCamera(
+        "Camera",
+        Math.PI / 2,
+        Math.PI / 3,
+        10,
+        BABYLON.Vector3.Zero(),
+        scene
+      );
+      camera.attachControl(canvas, true);
+
+      // Balanced zoom speed for scroll wheel
+      camera.wheelPrecision = 50;
+
+      // Load HDR environment texture (lighting only)
+      scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+        "environment/studio.env",
+        scene
+      );
+
+      // Skybox disabled: no visual HDRI background
+      // (do not include createDefaultSkybox)
+
+      // Load the GLB model
+      try {
+        const result = await BABYLON.SceneLoader.ImportMeshAsync("", "models/", "myModel.glb", scene);
+        console.log("✅ Model loaded successfully");
+
+        result.meshes.forEach(mesh => {
+          mesh.receiveShadows = true;
+        });
+      } catch (error) {
+        console.error("❌ Failed to load model:", error);
+      }
+
+      // Debug layer toggle: Shift + D
+      window.addEventListener("keydown", (e) => {
+        if (e.shiftKey && e.key.toLowerCase() === "d") {
+          scene.debugLayer.show();
+        }
+      });
+
+      return scene;
+    };
+
+    createScene().then(scene => {
+      engine.runRenderLoop(() => scene.render());
+    });
+
+    window.addEventListener("resize", () => {
+      engine.resize();
+    });
+  </script>
+</body>
+</html>

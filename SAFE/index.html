@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Babylon Viewer</title>
+  <!-- Babylon engine -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <!-- GLTF loader plugin for .glb/.gltf models -->
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <!-- Optional: Debug layer for inspecting the scene -->
+  <script src="https://cdn.babylonjs.com/debugLayer.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    #renderCanvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+
+    const createScene = async () => {
+      const scene = new BABYLON.Scene(engine);
+      scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.1, 1);
+
+      // Set up camera
+      const camera = new BABYLON.ArcRotateCamera(
+        "Camera",
+        Math.PI / 2,
+        Math.PI / 4,
+        5,
+        BABYLON.Vector3.Zero(),
+        scene
+      );
+      camera.attachControl(canvas, true);
+
+      // Set up lighting
+      const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
+      light.intensity = 1;
+
+      // Load GLB model
+      try {
+        await BABYLON.SceneLoader.ImportMeshAsync(
+          "",
+          "models/",
+          "myModel.glb",  // Replace with your actual file name
+          scene
+        );
+        console.log("✅ Model loaded successfully");
+      } catch (error) {
+        console.error("❌ Failed to load model:", error);
+      }
+
+      // Optional: press Shift+D to open debug layer
+      window.addEventListener("keydown", (e) => {
+        if (e.shiftKey && e.key.toLowerCase() === "d") {
+          scene.debugLayer.show();
+        }
+      });
+
+      return scene;
+    };
+
+    createScene().then(scene => {
+      engine.runRenderLoop(() => scene.render());
+    });
+
+    window.addEventListener("resize", () => {
+      engine.resize();
+    });
+  </script>
+</body>
+</html>
