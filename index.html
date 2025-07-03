@@ -38,8 +38,8 @@
     const createScene = async () => {
       const scene = new BABYLON.Scene(engine);
 
-      // Soft white background color
-      scene.clearColor = new BABYLON.Color4(0.95, 0.95, 0.95, 1);
+      // Soft charcoal background
+      scene.clearColor = new BABYLON.Color4(0.2, 0.2, 0.25, 1);
 
       // Camera setup
       const camera = new BABYLON.ArcRotateCamera(
@@ -52,16 +52,21 @@
       );
       camera.attachControl(canvas, true);
 
-      // Balanced desktop zoom speed
+      // Rotation speed tweak
+      camera.useAutoRotationBehavior = true;
+      const autoRotation = camera.autoRotationBehavior;
+      autoRotation.idleRotationSpeed = 0.2;      // increased from default (0.05)
+      autoRotation.idleRotationWaitTime = 1000;  // wait before rotating
+      autoRotation.idleRotationSpinupTime = 1500;
+
+      // Desktop & mobile tuning
       camera.wheelPrecision = 50;
+      camera.pinchPrecision = 100;
+      camera.angularSensibilityX = 4000;
+      camera.angularSensibilityY = 4000;
+      camera.inertia = 0.7;
 
-      // 👇 Mobile gesture tuning
-      camera.pinchPrecision = 100;          // slower pinch zoom
-      camera.angularSensibilityX = 4000;    // smoother horizontal drag
-      camera.angularSensibilityY = 4000;    // smoother vertical drag
-      camera.inertia = 0.7;                 // gentle easing after swipe
-
-      // HDR environment lighting
+      // HDR lighting
       scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
         "environment/studio.env",
         scene
