@@ -23,7 +23,6 @@
       touch-action: none;
     }
 
-    /* Animation dropdown menu */
     #animMenu {
       position: absolute;
       top: 20px;
@@ -54,7 +53,6 @@
 <body>
   <canvas id="renderCanvas"></canvas>
 
-  <!-- Animation dropdown UI -->
   <div id="animMenu">
     <label for="animationSelect">🎞 Animation:</label>
     <select id="animationSelect"></select>
@@ -67,71 +65,61 @@
     const createScene = async () => {
       const scene = new BABYLON.Scene(engine);
 
-      // Charcoal background
-      scene.clearColor = new BABYLON.Color4(0.2, 0.2, 0.25, 1);
+      scene.clearColor = new BABYLON.Color4(0.2, 0.2, 0.25, 1); // Soft charcoal
 
-      // Camera setup
       const camera = new BABYLON.ArcRotateCamera("Camera",
         Math.PI / 2, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
       camera.attachControl(canvas, true);
 
-      // Rotation speed tweak
+      // ✅ Rotation speed tweak
       camera.useAutoRotationBehavior = true;
       const autoRotation = camera.autoRotationBehavior;
-      autoRotation.idleRotationSpeed = 0.2;      // increased from default (0.05)
-      autoRotation.idleRotationWaitTime = 1000;  // wait before rotating
+      autoRotation.idleRotationSpeed = 0.2;
+      autoRotation.idleRotationWaitTime = 1000;
       autoRotation.idleRotationSpinupTime = 1500;
 
-      // Desktop & mobile tuning
+      // ✅ Desktop & mobile tuning
       camera.wheelPrecision = 50;
       camera.pinchPrecision = 50;
       camera.angularSensibilityX = 2000;
       camera.angularSensibilityY = 2000;
-	  camera.panningSensibility = 400; // Balanced pan speed
-	  
-      // HDR lighting
+      camera.panningSensibility = 400;
+
+      // ✅ HDR lighting
       scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
         "environment/studio.env", scene);
 
-      // Load model and animations
-      try {
-        const result = await BABYLON.SceneLoader.ImportMeshAsync("", "models/", "myModel.glb", scene);
-        result.meshes.forEach(mesh => mesh.receiveShadows = true);
+      // ✅ Load model with full scene and animations
+      await BABYLON.SceneLoader.AppendAsync("models/", "myModel.glb", scene);
 
-        const animationDropdown = document.getElementById("animationSelect");
+      // ✅ Animation dropdown logic
+      const animationDropdown = document.getElementById("animationSelect");
 
-        // Populate dropdown with animation names (fallback if unnamed)
-        scene.animationGroups.forEach((group, i) => {
-          const name = group.name || `Animation ${i + 1}`;
-          const option = document.createElement("option");
-          option.text = name;
-          animationDropdown.add(option);
-        });
+      scene.animationGroups.forEach((group, i) => {
+        const name = group.name || `Animation ${i + 1}`;
+        const option = document.createElement("option");
+        option.text = name;
+        animationDropdown.add(option);
+      });
 
-        // Auto-play first animation
-        if (scene.animationGroups.length > 0) {
-          const first = scene.animationGroups[0];
-          first.loopAnimation = true;
-          first.play(true);
-          animationDropdown.value = first.name || `Animation 1`;
-        }
-
-        // Dropdown change logic
-        animationDropdown.addEventListener("change", (e) => {
-          scene.animationGroups.forEach(g => g.stop());
-          const selected = e.target.value;
-          const group = scene.animationGroups.find(g => (g.name || `Animation ${scene.animationGroups.indexOf(g)+1}`) === selected);
-          if (group) {
-            group.loopAnimation = true;
-            group.play(true);
-          }
-        });
-
-      } catch (error) {
-        console.error("❌ Failed to load model:", error);
+      if (scene.animationGroups.length > 0) {
+        const first = scene.animationGroups[0];
+        first.loopAnimation = true;
+        first.play(true);
+        animationDropdown.value = first.name || `Animation 1`;
       }
 
-      // Shift + D to toggle debug layer
+      animationDropdown.addEventListener("change", (e) => {
+        scene.animationGroups.forEach(g => g.stop());
+        const selected = e.target.value;
+        const group = scene.animationGroups.find((g, i) =>
+          (g.name || `Animation ${i + 1}`) === selected);
+        if (group) {
+          group.loopAnimation = true;
+          group.play(true);
+        }
+      });
+
       window.addEventListener("keydown", (e) => {
         if (e.shiftKey && e.key.toLowerCase() === "d") {
           scene.debugLayer.show();
