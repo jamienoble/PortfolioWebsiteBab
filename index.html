@@ -58,6 +58,19 @@
     #playAllBtn:hover {
       background-color: #666;
     }
+    #stopAllBtn {
+      margin-top: 8px;
+      font-size: 14px;
+      padding: 6px 10px;
+      background-color: #722;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #stopAllBtn:hover {
+      background-color: #944;
+    }
   </style>
 </head>
 <body>
@@ -66,6 +79,7 @@
     <label for="animationSelect">🎞 Animation:</label>
     <select id="animationSelect"></select>
     <button id="playAllBtn">▶️ Play All</button>
+    <button id="stopAllBtn">⏹ Stop All</button>
   </div>
 
   <script>
@@ -100,7 +114,6 @@
 
       const animationDropdown = document.getElementById("animationSelect");
 
-      // Sort animation groups by number prefix
       sortedGroups = [...scene.animationGroups].sort((a, b) => {
         const getPrefix = name => parseInt((name || '').match(/^\d+/)?.[0]) || 0;
         return getPrefix(a.name) - getPrefix(b.name);
@@ -168,6 +181,13 @@
         };
 
         playNext();
+      });
+
+      document.getElementById("stopAllBtn").addEventListener("click", () => {
+        sortedGroups.forEach(group => {
+          group.stop();
+          group.reset();
+        });
       });
 
       window.addEventListener("keydown", (e) => {
