@@ -26,10 +26,35 @@
       height: 100%;
       touch-action: none;
     }
+
+    /* Animation menu styles */
+    #animMenu {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(30, 30, 30, 0.85);
+      color: white;
+      font-family: sans-serif;
+      padding: 10px 14px;
+      border-radius: 6px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+    }
+    #animationSelect {
+      margin-left: 10px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <canvas id="renderCanvas"></canvas>
+
+  <!-- Animation dropdown UI -->
+  <div id="animMenu">
+    <label for="animationSelect">🎞 Animation:</label>
+    <select id="animationSelect"></select>
+  </div>
 
   <script>
     const canvas = document.getElementById("renderCanvas");
@@ -64,29 +89,51 @@
       camera.pinchPrecision = 50;
       camera.angularSensibilityX = 2000;
       camera.angularSensibilityY = 2000;
-	  camera.panningSensibility = 200; // Balanced pan speed
-
-      camera.inertia = 0.7;
-
-      // HDR lighting
+	  camera.panningSensibility = 300; // Balanced pan speed
+      // HDR lighting only (no skybox)
       scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
         "environment/studio.env",
         scene
       );
 
-      // Model import
+      // Load model and animations
       try {
         const result = await BABYLON.SceneLoader.ImportMeshAsync("", "models/", "myModel.glb", scene);
         console.log("✅ Model loaded successfully");
+        result.meshes.forEach(mesh => mesh.receiveShadows = true);
 
-        result.meshes.forEach(mesh => {
-          mesh.receiveShadows = true;
+        // Populate dropdown with animation groups
+        const animationDropdown = document.getElementById("animationSelect");
+        scene.animationGroups.forEach(group => {
+          const option = document.createElement("option");
+          option.text = group.name;
+          animationDropdown.add(option);
         });
+
+        // Optional: auto-play first animation
+        if (scene.animationGroups.length > 0) {
+          const first = scene.animationGroups[0];
+          first.loopAnimation = true;
+          first.play(true);
+          animationDropdown.value = first.name;
+        }
+
+        // Dropdown change event
+        animationDropdown.addEventListener("change", (e) => {
+          scene.animationGroups.forEach(g => g.stop());
+          const selected = e.target.value;
+          const group = scene.animationGroups.find(g => g.name === selected);
+          if (group) {
+            group.loopAnimation = true;
+            group.play(true);
+          }
+        });
+
       } catch (error) {
         console.error("❌ Failed to load model:", error);
       }
 
-      // Debug toggle: Shift + D
+      // Debug toggle (Shift + D)
       window.addEventListener("keydown", (e) => {
         if (e.shiftKey && e.key.toLowerCase() === "d") {
           scene.debugLayer.show();
