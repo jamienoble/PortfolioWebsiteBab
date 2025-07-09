@@ -71,6 +71,7 @@
   <script>
     const canvas = document.getElementById("renderCanvas");
     const engine = new BABYLON.Engine(canvas, true);
+    let sortedGroups = [];
 
     const createScene = async () => {
       const scene = new BABYLON.Scene(engine);
@@ -99,15 +100,21 @@
 
       const animationDropdown = document.getElementById("animationSelect");
 
-      scene.animationGroups.forEach((group, i) => {
+      // Sort animation groups by number prefix
+      sortedGroups = [...scene.animationGroups].sort((a, b) => {
+        const getPrefix = name => parseInt((name || '').match(/^\d+/)?.[0]) || 0;
+        return getPrefix(a.name) - getPrefix(b.name);
+      });
+
+      sortedGroups.forEach((group, i) => {
         const name = group.name || `Animation ${i + 1}`;
         const option = document.createElement("option");
         option.text = name;
         animationDropdown.add(option);
       });
 
-      if (scene.animationGroups.length > 0) {
-        const first = scene.animationGroups[0];
+      if (sortedGroups.length > 0) {
+        const first = sortedGroups[0];
         first.loopAnimation = true;
         first.play(true);
         animationDropdown.value = first.name || `Animation 1`;
@@ -115,12 +122,11 @@
 
       animationDropdown.addEventListener("change", (e) => {
         const selectedName = e.target.value;
-        const selectedGroup = scene.animationGroups.find((g, i) =>
+        const selectedGroup = sortedGroups.find((g, i) =>
           (g.name || `Animation ${i + 1}`) === selectedName);
-
         if (!selectedGroup) return;
 
-        scene.animationGroups.forEach(group => {
+        sortedGroups.forEach(group => {
           if (group !== selectedGroup) {
             group.stop();
             group.reset();
@@ -142,14 +148,13 @@
 
       document.getElementById("playAllBtn").addEventListener("click", () => {
         let index = 0;
-        const groups = scene.animationGroups;
         const dropdown = document.getElementById("animationSelect");
 
         const playNext = () => {
-          if (index >= groups.length) return;
+          if (index >= sortedGroups.length) return;
 
-          const current = groups[index];
-          groups.forEach(g => { g.stop(); g.reset(); });
+          const current = sortedGroups[index];
+          sortedGroups.forEach(g => { g.stop(); g.reset(); });
 
           current.loopAnimation = false;
           current.play();
