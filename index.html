@@ -6,11 +6,7 @@
 
   <!-- Babylon core engine -->
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
-
-  <!-- GLTF loader plugin -->
   <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-
-  <!-- Debug tools -->
   <script src="https://cdn.babylonjs.com/debugLayer.js"></script>
 
   <style>
@@ -27,59 +23,42 @@
       touch-action: none;
     }
 
-    /* Animation menu styles */
+    /* Animation dropdown menu */
     #animMenu {
       position: absolute;
-      bottom: 20px;
+      top: 20px;
       right: 20px;
-      background: rgba(30, 30, 30, 0.85);
+      background: rgba(30, 30, 30, 0.9);
       color: white;
       font-family: sans-serif;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 6px;
       z-index: 10;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
     }
+
     #animationSelect {
-      margin-left: 10px;
-      font-size: 14px;
+      margin-top: 8px;
+      width: 200px;
+      font-size: 16px;
+      padding: 6px;
+      background-color: #1e1e1e;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <canvas id="renderCanvas"></canvas>
 
-<!-- Animation dropdown UI -->
-<div id="animMenu">
-  <label for="animationSelect">🎞 Animation:</label>
-  <select id="animationSelect"></select>
-</div>
-
-<style>
-  #animMenu {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: rgba(30, 30, 30, 0.9);
-    color: white;
-    font-family: sans-serif;
-    padding: 12px 16px;
-    border-radius: 6px;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  }
-
-  #animationSelect {
-    margin-top: 8px;
-    width: 200px;
-    font-size: 16px;
-    padding: 6px;
-  }
-</style>
+  <!-- Animation dropdown UI -->
+  <div id="animMenu">
+    <label for="animationSelect">🎞 Animation:</label>
+    <select id="animationSelect"></select>
+  </div>
 
   <script>
     const canvas = document.getElementById("renderCanvas");
@@ -88,18 +67,12 @@
     const createScene = async () => {
       const scene = new BABYLON.Scene(engine);
 
-      // Soft charcoal background
+      // Charcoal background
       scene.clearColor = new BABYLON.Color4(0.2, 0.2, 0.25, 1);
 
       // Camera setup
-      const camera = new BABYLON.ArcRotateCamera(
-        "Camera",
-        Math.PI / 2,
-        Math.PI / 3,
-        10,
-        BABYLON.Vector3.Zero(),
-        scene
-      );
+      const camera = new BABYLON.ArcRotateCamera("Camera",
+        Math.PI / 2, Math.PI / 3, 10, BABYLON.Vector3.Zero(), scene);
       camera.attachControl(canvas, true);
 
       // Rotation speed tweak
@@ -114,40 +87,40 @@
       camera.pinchPrecision = 50;
       camera.angularSensibilityX = 2000;
       camera.angularSensibilityY = 2000;
-	  camera.panningSensibility = 300; // Balanced pan speed
-      // HDR lighting only (no skybox)
+	  camera.panningSensibility = 400; // Balanced pan speed
+	  
+      // HDR lighting
       scene.environmentTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-        "environment/studio.env",
-        scene
-      );
+        "environment/studio.env", scene);
 
       // Load model and animations
       try {
         const result = await BABYLON.SceneLoader.ImportMeshAsync("", "models/", "myModel.glb", scene);
-        console.log("✅ Model loaded successfully");
         result.meshes.forEach(mesh => mesh.receiveShadows = true);
 
-        // Populate dropdown with animation groups
         const animationDropdown = document.getElementById("animationSelect");
-        scene.animationGroups.forEach(group => {
+
+        // Populate dropdown with animation names (fallback if unnamed)
+        scene.animationGroups.forEach((group, i) => {
+          const name = group.name || `Animation ${i + 1}`;
           const option = document.createElement("option");
-          option.text = group.name;
+          option.text = name;
           animationDropdown.add(option);
         });
 
-        // Optional: auto-play first animation
+        // Auto-play first animation
         if (scene.animationGroups.length > 0) {
           const first = scene.animationGroups[0];
           first.loopAnimation = true;
           first.play(true);
-          animationDropdown.value = first.name;
+          animationDropdown.value = first.name || `Animation 1`;
         }
 
-        // Dropdown change event
+        // Dropdown change logic
         animationDropdown.addEventListener("change", (e) => {
           scene.animationGroups.forEach(g => g.stop());
           const selected = e.target.value;
-          const group = scene.animationGroups.find(g => g.name === selected);
+          const group = scene.animationGroups.find(g => (g.name || `Animation ${scene.animationGroups.indexOf(g)+1}`) === selected);
           if (group) {
             group.loopAnimation = true;
             group.play(true);
@@ -158,7 +131,7 @@
         console.error("❌ Failed to load model:", error);
       }
 
-      // Debug toggle (Shift + D)
+      // Shift + D to toggle debug layer
       window.addEventListener("keydown", (e) => {
         if (e.shiftKey && e.key.toLowerCase() === "d") {
           scene.debugLayer.show();
